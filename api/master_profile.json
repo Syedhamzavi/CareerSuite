@@ -1,0 +1,124 @@
+{
+  "personal_info": {
+    "name": "SYED MUJATABA HAMZAVI",
+    "phone": "+916363345883",
+    "email": "syedmujtaba1042@gmail.com",
+    "location": "Bengaluru",
+    "portfolio_label": "Portfolio",
+    "portfolio_url": "https://github.com/Syedhamzavi",
+    "linkedin_primary": "https://www.linkedin.com/in/syed-hamzavi12",
+    "linkedin_alt": "https://www.linkedin.com/in/syed-hamzavi-31b3a4272",
+    "github": "https://github.com/Syedhamzavi"
+  },
+  "education": {
+    "degree": "Bachelor of Engineering (B.E) in Artificial Intelligence and Data Science (CGPA: 7.85/10)",
+    "date": "June 2025",
+    "institution": "Channabasaveshwara Institute of Technology (VTU), Gubbi"
+  },
+  "skills_pool": {
+    "Programming & Databases": ["SQL", "Python", "JavaScript", "MySQL", "PostgreSQL", "SQLite", "MongoDB"],
+    "BI & Visualization": ["Power BI", "Tableau", "Microsoft Excel", "DAX", "Power Query", "Pivot Tables", "VLOOKUP", "XLOOKUP", "Dashboard Development", "Matplotlib", "Seaborn", "Geoplotlib", "Bokeh"],
+    "Data Analysis & ML": ["Data Cleaning", "Data Transformation", "ETL", "EDA", "Statistics", "Pandas", "NumPy", "Scikit-learn", "PyTorch", "TensorFlow", "OpenCV"],
+    "Web & Tools": ["HTML", "CSS", "Flask", "Streamlit", "Angular.js", "GitHub", "VS Code", "Anaconda", "Jupyter Notebook", "SQLiteStudio"],
+    "Customer Support": ["Customer Communication", "Query Resolution", "Issue Resolution", "Technical Assistance", "Problem Solving", "Issue Diagnosis", "Customer Follow-up"],
+    "Technical Support": ["Troubleshooting", "Data Validation", "Application Support", "Technical Documentation", "Data Troubleshooting"],
+    "Professional Skills": ["Communication", "Analytical Thinking", "Attention to Detail", "Stakeholder Management", "Time Management", "Team Collaboration", "Logical Reasoning", "Critical Thinking", "Accountability", "Adaptability"]
+  },
+  "experience_pool": [
+    {
+      "role": "Data Analyst Intern",
+      "company": "AiVariant",
+      "duration": "Apr 2026 – Jul 2026",
+      "variants": {
+        "data_analyst": [
+          "Performed end-to-end analysis of 60,399 Adventure Works sales records across Excel, SQL, Power BI, and Tableau.",
+          "Cleaned raw data in Excel; joined a 5-table star-schema model (Sales fact + Customer, Date, Product, Sales Territory) in SQL.",
+          "Built interactive Power BI and Tableau dashboards with KPIs and dynamic slicers, covering 18.4K+ customers and ₹29.36M+ sales.",
+          "Designed and delivered analytical reports and dashboards covering sales, products, customers, and regional performance."
+        ],
+        "technical_support": [
+          "Worked with business data and technical applications using SQL, Excel, Power BI, and Tableau.",
+          "Performed data cleaning, transformation, validation, and troubleshooting to identify and resolve data-related issues.",
+          "Wrote SQL queries to retrieve, analyze, and validate information from datasets.",
+          "Developed and maintained interactive dashboards with KPIs, filters, slicers, and visual reports.",
+          "Analyzed sales, product, customer, and regional data and communicated findings through analytical reports and dashboards."
+        ]
+      }
+    },
+    {
+      "role": "Backend Development Intern",
+      "company": "Eunoia Labs",
+      "duration": "Sep 2024 – Dec 2024",
+      "variants": {
+        "ai_software_backend": [
+          "Developed AI-driven logistics features in the SPEDOCITY app, enabling real-time GPS tracking and optimizing fleet assignment.",
+          "Improved delivery efficiency by 40% and reduced fleet idle time by 35% through backend optimization and intelligent routing."
+        ]
+      }
+    }
+  ],
+  "projects_pool": [
+    {
+      "title": "Adventure Works Sales & Performance Dashboard | Tableau",
+      "bullets": [
+        "Designed and developed an interactive Tableau dashboard analyzing 60.4K+ orders, 18.4K+ customers, ₹29.36M+ sales, and ₹12.08M+ profit.",
+        "Performed data analysis and validation to identify sales trends, top-performing products, customers, and regions.",
+        "Identified 2013 as the highest-performing year (₹16.35M sales) and Australia as the top region (₹9.06M sales)."
+      ]
+    },
+    {
+      "title": "Financial Performance Dashboard | Power BI",
+      "bullets": [
+        "Synthesized $118.73M in global financial data spanning 5 countries and 6 product lines, translating raw tables into a cohesive 2-page executive performance dashboard.",
+        "Developed advanced DAX measures and cross-page navigation to track discount bands and monthly trend charts.",
+        "Utilized dynamic slicers to enable self-service filtering and interactive KPI analysis."
+      ]
+    },
+    {
+      "title": "Finvisor – AI Personal Finance Advisor (Streamlit)",
+      "bullets": [
+        "Developed a Streamlit app in Python for personal expense tracking and budgeting.",
+        "Built ML models (Python, Scikit-learn) with 85% accuracy for categorizing and forecasting expenses.",
+        "Enhanced insights through dynamic charts and filters, improving user budgeting efficiency by 30%."
+      ]
+    },
+    {
+      "title": "Multiple Disease Prediction Using Machine Learning (Streamlit)",
+      "bullets": [
+        "Built a Streamlit-based app for predicting diseases such as Diabetes, Heart Disease, and Parkinson’s, achieving over 90% model accuracy.",
+        "Integrated real-time user input and machine learning classification pipelines.",
+        "Improved user experience through robust form validation and a clear result display, increasing engagement and accuracy of self-assessments."
+      ]
+    },
+    {
+      "title": "Password Manager in Python (Cryptography)",
+      "bullets": [
+        "Developed a Python-based password manager with a Tkinter GUI, incorporating SHA-256 hashing to ensure secure password storage.",
+        "Integrated a customizable password generation feature, allowing users to adjust complexity based on their preferences."
+      ]
+    }
+  ],
+  "certifications_pool": [
+    {"title": "Certificate Program in Data Analyst – NASSCOM.", "year": "2026"},
+    {"title": "Certificate of Excellence in Data Analyst – Excelr.", "year": "2026"},
+    {"title": "Gen AI Powered Data Analytics Job Simulation – Forage (TATA).", "year": "2025"},
+    {"title": "Programming with Python – Internshala.", "year": "2024"},
+    {"title": "Advanced SQL – Great Learning.", "year": "2024"},
+    {"title": "Complete Data Science Bootcamp – Udemy.", "year": "2024"},
+    {"title": "Deep Learning – Simplilearn.", "year": "2024"},
+    {"title": "DSA in Python – Udemy.", "year": "2024"},
+    {"title": "Core Java – EduCADD & THINKWorks.", "year": "2024"}
+  ],
+  "achievements": [
+    {
+      "text": "Published the research paper: \"AI-Driven Framework for Epidemic Management & Diagnostic Imaging\" in IJPREMS (Nov 2024, Vol. 04, Issue 11).",
+      "doi_label": "https://www.doi.org/10.58257/IJPREMS36622",
+      "doi_url": "https://www.doi.org/10.58257/IJPREMS36622"
+    },
+    {
+      "text": "Shark Tank Participation: Competed in Shark Tank Snehada Kadalu 2K24 (MCE & M E-RIISE) at Prince Anantya, Bengaluru (Dec 14, 2024). Recognized for innovation.",
+      "doi_label": "",
+      "doi_url": ""
+    }
+  ]
+}

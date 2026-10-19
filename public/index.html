@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Syed's Career Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --panel: #121826;
+      --panel-2: #192033;
+      --line: #252f47;
+      --text: #eef2f9;
+      --muted: #8e9ab3;
+      --accent: #7390ff;
+      --accent-strong: #4d6cf0;
+      --good: #3fc79a;
+      --warn: #f2b84b;
+      --bad: #f2706e;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      background-image:
+        radial-gradient(1000px 560px at 6% -12%, rgba(77, 108, 240, 0.18), transparent 60%),
+        radial-gradient(800px 440px at 100% 105%, rgba(63, 199, 154, 0.08), transparent 60%);
+      background-attachment: fixed;
+      color: var(--text);
+      padding: 26px 22px 56px;
+      min-height: 100vh;
+    }
+
+    /* ---------- header ---------- */
+    .topbar {
+      max-width: 1440px;
+      margin: 0 auto 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 18px; flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .logo { width: 42px; height: 42px; flex: none; }
+    .brand h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.2; }
+    .brand p { font-size: 13px; color: var(--muted); margin-top: 2px; max-width: 520px; line-height: 1.45; }
+
+    .pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--line); background: var(--panel); color: var(--muted);
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+    .pill.ok { color: var(--good); border-color: rgba(63,199,154,.35); }
+    .pill.ok::before { background: var(--good); }
+    .pill.off { color: var(--warn); border-color: rgba(242,184,75,.35); }
+    .pill.off::before { background: var(--warn); }
+
+    /* ---------- layout ---------- */
+    .app-layout {
+      max-width: 1440px; margin: 0 auto;
+      display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px;
+    }
+    @media (min-width: 1100px) {
+      .app-layout { grid-template-columns: 410px minmax(0, 1fr); align-items: start; }
+      .side { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; }
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: 0 24px 48px -28px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.03);
+    }
+
+    .group { padding: 18px 0; border-top: 1px solid var(--line); }
+    .group:first-of-type { border-top: none; padding-top: 0; }
+    .group-title { font-size: 13.5px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; }
+    .group-title small { margin-left: auto; font-weight: 500; color: var(--muted); font-size: 12px; }
+    .step {
+      display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 9px;
+      border-radius: 50%; background: var(--accent-strong); color: #fff; font-size: 11.5px; font-weight: 800;
+    }
+
+    label { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); margin: 12px 0 6px; }
+    label:first-child { margin-top: 0; }
+
+    textarea, select, input[type="text"] {
+      width: 100%; padding: 11px 13px;
+      border: 1px solid var(--line); border-radius: 10px;
+      font-size: 14px; font-family: inherit;
+      background: var(--bg); color: var(--text);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    textarea { resize: vertical; line-height: 1.5; }
+    textarea:focus, select:focus, input:focus-visible {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(115, 144, 255, 0.22);
+    }
+    ::placeholder { color: #55617c; }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 620px) { .row-2 { grid-template-columns: 1fr; } }
+
+    .link-row { display: flex; gap: 8px; }
+    .link-row input { flex: 1; min-width: 0; }
+    .link-row .btn-action { white-space: nowrap; }
+    .field-hint { font-size: 12px; color: var(--muted); margin-top: 7px; line-height: 1.5; }
+
+    .swatches { display: flex; gap: 9px; }
+    .swatch {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 2px solid transparent; cursor: pointer; padding: 0; outline-offset: 2px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.12);
+    }
+    .swatch.active { border-color: #fff; }
+    .swatch:focus-visible { outline: 2px solid var(--accent); }
+
+    input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+    .check { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--muted); cursor: pointer; }
+    .check input { accent-color: var(--accent); }
+
+    .btn {
+      width: 100%; padding: 14px 18px;
+      background: linear-gradient(135deg, #5b7bff, #3f5ee0);
+      color: #fff; border: none; border-radius: 12px;
+      font-family: inherit; font-weight: 700; font-size: 15px; cursor: pointer;
+      margin-top: 6px;
+      box-shadow: 0 10px 24px -10px rgba(77,108,240,.8);
+      transition: transform .15s, box-shadow .2s, filter .2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:active { transform: scale(0.99); }
+    .btn:disabled { opacity: .7; cursor: wait; }
+    .btn:focus-visible, .tab-btn:focus-visible, .btn-action:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+    .spinner {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+      animation: spin .8s linear infinite; display: none;
+    }
+    .btn:disabled .spinner { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- result area ---------- */
+    .result-top { display: none; gap: 14px; margin-bottom: 16px; grid-template-columns: minmax(0, 1fr); }
+    @media (min-width: 900px) { .result-top { grid-template-columns: 1fr 1fr; } }
+
+    .score-strip {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--panel-2); border: 1px solid var(--line);
+      border-radius: 14px; padding: 14px 18px;
+    }
+    .score-ring {
+      --p: 0; width: 56px; height: 56px; border-radius: 50%; flex: none;
+      background: conic-gradient(var(--ring, var(--good)) calc(var(--p) * 1%), var(--line) 0);
+      display: grid; place-items: center;
+    }
+    .score-ring span {
+      width: 44px; height: 44px; border-radius: 50%; background: var(--panel-2);
+      display: grid; place-items: center; font-weight: 800; font-size: 14px;
+    }
+    .score-strip .meta { font-size: 13px; line-height: 1.5; color: var(--muted); min-width: 0; }
+    .score-strip .meta b { color: var(--text); }
+
+    .apply-card {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      background: linear-gradient(135deg, rgba(63,199,154,.12), rgba(77,108,240,.12));
+      border: 1px solid rgba(63,199,154,.3);
+      border-radius: 14px; padding: 14px 18px;
+    }
+    .apply-title { font-size: 14.5px; font-weight: 700; }
+    .apply-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; line-height: 1.5; }
+
+    .tab-bar { display: flex; gap: 4px; margin-bottom: 14px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+    .tab-btn {
+      padding: 11px 16px; background: transparent; border: none;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      color: var(--muted); font-family: inherit; font-weight: 600; font-size: 13.5px;
+      cursor: pointer; transition: color .2s, border-color .2s; white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+    .tab-btn .count {
+      display: inline-block; min-width: 18px; padding: 1px 6px; margin-left: 6px;
+      border-radius: 9px; font-size: 11px; background: var(--panel-2); color: var(--warn);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .action-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+    .btn-action {
+      padding: 9px 16px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+      font-family: inherit; font-weight: 600; font-size: 13px; cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    .btn-action:hover { border-color: var(--accent); }
+    .btn-action:disabled { opacity: .55; cursor: not-allowed; }
+    .btn-action.primary { background: var(--good); border-color: var(--good); color: #05261c; }
+    .btn-action.primary:hover { background: #35b78b; }
+    .fit-note { margin-left: auto; font-size: 12.5px; color: var(--muted); }
+    .fit-note b { color: var(--good); }
+    .fit-note.warn b { color: var(--warn); }
+
+    .viewport-wrapper {
+      background: #080b12; padding: 20px; border-radius: 14px;
+      border: 1px solid var(--line); overflow-x: auto;
+    }
+
+    .doc-container {
+      background: #ffffff; color: #0f172a;
+      padding: 44px; border-radius: 6px; min-height: 600px;
+      font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+      font-size: 11pt; line-height: 1.65; white-space: pre-wrap;
+      max-width: 794px; margin: 0 auto;
+      box-shadow: 0 16px 40px rgba(0,0,0,.45);
+    }
+    .doc-container:focus { outline: 2px solid var(--accent); }
+    #coldEmailBox { min-height: 320px; }
+
+    .send-bar { background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+    .send-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+    .hint { font-size: 12.5px; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+
+    /* ---------- A4 resume ---------- */
+    .resume-wrap {
+      width: 794px; height: 1122px; max-height: 1122px;
+      overflow: hidden; margin: 0 auto; background: #fff;
+      box-shadow: 0 16px 40px rgba(0,0,0,.5); border-radius: 4px;
+    }
+    .resume-page {
+      --cv-accent: #000000;
+      width: 100%; height: 100%;
+      background: #fff; color: #000;
+      padding: 34px 44px;
+      font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+      font-size: 8.8pt; line-height: 1.15;
+    }
+    .resume-page:focus { outline: none; }
+    .cv-header { text-align: center; margin-bottom: 6px; }
+    .cv-name { font-size: 15pt; font-weight: 700; letter-spacing: .3px; margin-bottom: 2px; color: var(--cv-accent); }
+    .cv-headline { font-size: 9.5pt; font-weight: 700; margin-bottom: 2px; }
+    .cv-contact { font-size: 8.5pt; margin-bottom: 1px; }
+    .cv-contact a, .cv-link { color: #0563c1; text-decoration: underline; }
+    .cv-section { margin-top: 6px; }
+    .cv-section-title {
+      font-size: 9.5pt; font-weight: 700; text-transform: uppercase;
+      color: var(--cv-accent); border-bottom: 1.2px solid var(--cv-accent);
+      padding-bottom: 1px; margin-bottom: 3.5px;
+    }
+    .cv-summary { text-align: justify; }
+    .cv-skill-line { margin-bottom: 1.5px; }
+    .cv-block { margin-bottom: 4px; }
+    .cv-row { width: 100%; overflow: hidden; font-weight: 700; margin-bottom: 1px; }
+    .cv-left { float: left; }
+    .cv-right { float: right; font-weight: 600; }
+    .cv-bullets { clear: both; margin-left: 14px; margin-top: 1px; }
+    .cv-bullets li { margin-bottom: 1.2px; }
+
+    /* ---------- suggestions ---------- */
+    .sg-empty { color: var(--muted); font-size: 14px; padding: 40px 10px; text-align: center; line-height: 1.6; }
+    .sg-grid { display: grid; gap: 16px; }
+    @media (min-width: 900px) { .sg-grid { grid-template-columns: 1fr 1fr; } .sg-wide { grid-column: 1 / -1; } }
+    .sg-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+    .sg-card h3 { font-size: 14.5px; font-weight: 700; margin-bottom: 4px; }
+    .sg-card .sub { font-size: 12.5px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+    .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip { font-size: 12.5px; font-weight: 600; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line); }
+    .chip.ok { color: var(--good); border-color: rgba(63,199,154,.4); background: rgba(63,199,154,.08); }
+    .chip.miss { color: var(--warn); border-color: rgba(242,184,75,.4); background: rgba(242,184,75,.08); }
+    .chip.none { color: var(--muted); border-style: dashed; }
+    .checklist { list-style: none; display: grid; gap: 10px; }
+    .checklist li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; font-size: 13.5px; line-height: 1.5; }
+    .checklist .dot { width: 18px; height: 18px; border-radius: 50%; margin-top: 2px; display: grid; place-items: center; font-size: 11px; font-weight: 800; color: #07100d; }
+    .dot.pass { background: var(--good); }
+    .dot.warn { background: var(--warn); }
+    .dot.fail { background: var(--bad); }
+    .checklist small { display: block; color: var(--muted); font-size: 12.5px; }
+    .tips { list-style: none; display: grid; gap: 10px; }
+    .tips li { font-size: 13.5px; line-height: 1.55; padding-left: 14px; border-left: 2px solid var(--accent); }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 20px);
+      background: var(--text); color: #0b0f17; padding: 11px 18px; border-radius: 11px;
+      font-size: 13.5px; font-weight: 700; opacity: 0; pointer-events: none;
+      transition: opacity .25s, transform .25s; z-index: 50; max-width: 92vw; text-align: center; line-height: 1.45;
+      box-shadow: 0 14px 30px -10px rgba(0,0,0,.6);
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast.error { background: var(--bad); color: #1d0505; }
+
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .no-print, .topbar { display: none !important; }
+      .panel { background: none; border: none; padding: 0; box-shadow: none; }
+      .viewport-wrapper { background: none; padding: 0; border: none; }
+      .resume-wrap { width: 210mm; height: 297mm; max-height: 297mm; box-shadow: none; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7d9bff"/><stop offset="1" stop-color="#3fc79a"/></linearGradient></defs>
+        <rect width="32" height="32" rx="9" fill="url(#lg)"/>
+        <path d="M10 9h8l4 4v10H10z" fill="none" stroke="#0b0f17" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M13 17h6M13 20.5h4" stroke="#0b0f17" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <h1>Syed's Career Suite</h1>
+        <p>Paste a job link or description. Get a one-page resume, cover letter and recruiter email matched to it.</p>
+      </div>
+    </div>
+    <div class="pills">
+      <span class="pill" id="pillAI">Checking server</span>
+      <span class="pill" id="pillMail">Email</span>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <!-- LEFT: INPUTS -->
+    <aside class="panel side no-print">
+      <div class="group">
+        <div class="group-title"><span class="step">1</span>The job</div>
+        <label for="jobLink">Job link</label>
+        <div class="link-row">
+          <input type="text" id="jobLink" placeholder="https://company.com/careers/data-analyst" inputmode="url" autocomplete="off" />
+          <button type="button" class="btn-action" id="fetchBtn" onclick="fetchJD()">Read job</button>
+        </div>
+        <p class="field-hint">Works on most company career pages. If a site blocks it, paste the description below.</p>
+
+        <label for="jdInput" style="display:flex;justify-content:space-between">Job description <span id="jdCount" style="font-weight:500">0 words</span></label>
+        <textarea id="jdInput" rows="8" placeholder="Paste the full description from LinkedIn, Naukri or Indeed"></textarea>
+        <label for="extraInput">Focus for this application (optional)</label>
+        <textarea id="extraInput" rows="2" placeholder="e.g. Lead with SQL and Power BI projects"></textarea>
+      </div>
+
+      <div class="group">
+        <div class="group-title"><span class="step">2</span>Your details</div>
+        <div class="row-2">
+          <div>
+            <label for="linkedinSelect">LinkedIn</label>
+            <select id="linkedinSelect">
+              <option value="https://www.linkedin.com/in/syed-hamzavi12">in/syed-hamzavi12</option>
+              <option value="https://www.linkedin.com/in/syed-hamzavi-31b3a4272">in/syed-hamzavi-31b3a4272</option>
+            </select>
+          </div>
+          <div>
+            <label for="locationInput">Location</label>
+            <input type="text" id="locationInput" value="Bengaluru" />
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="group-title"><span class="step">3</span>Resume layout</div>
+        <label for="fontSlider" style="margin-top:0">Text size: <span id="fontVal">8.8</span>pt</label>
+        <input type="range" id="fontSlider" min="7" max="9.5" step="0.1" value="8.8" oninput="adjustFont(this.value)" />
+        <label class="check"><input type="checkbox" id="autoFitBox" checked /> Shrink text automatically to fit one page</label>
+        <label style="margin-top:14px">Heading colour</label>
+        <div class="swatches" id="swatches">
+          <button type="button" class="swatch active" data-color="#000000" style="background:#000" aria-label="Black"></button>
+          <button type="button" class="swatch" data-color="#1f3a68" style="background:#1f3a68" aria-label="Navy"></button>
+          <button type="button" class="swatch" data-color="#0f6b63" style="background:#0f6b63" aria-label="Teal"></button>
+          <button type="button" class="swatch" data-color="#6b2d3c" style="background:#6b2d3c" aria-label="Maroon"></button>
+        </div>
+      </div>
+
+      <button class="btn" id="generateBtn" onclick="generateSuite()">
+        <span class="spinner"></span><span id="generateLabel">Generate resume, cover letter and email</span>
+      </button>
+    </aside>
+
+    <!-- RIGHT: OUTPUT -->
+    <main class="panel">
+      <div class="result-top no-print" id="resultTop">
+        <div class="score-strip">
+          <div class="score-ring" id="scoreRing"><span id="scoreNum">0</span></div>
+          <div class="meta" id="scoreMeta"></div>
+        </div>
+        <div class="apply-card">
+          <div>
+            <div class="apply-title">Ready to apply?</div>
+            <div class="apply-sub" id="applySub">Paste the job link on the left to apply from here.</div>
+          </div>
+          <button class="btn-action primary" id="applyBtn" onclick="applyNow()">Apply now</button>
+        </div>
+      </div>
+
+      <div class="tab-bar no-print" id="tabBar" style="display:none;" role="tablist">
+        <button class="tab-btn active" data-tab="resume" onclick="switchTab('resume')">Resume</button>
+        <button class="tab-btn" data-tab="cover" onclick="switchTab('cover')">Cover letter</button>
+        <button class="tab-btn" data-tab="email" onclick="switchTab('email')">Cold email</button>
+        <button class="tab-btn" data-tab="suggest" onclick="switchTab('suggest')">Suggestions<span class="count" id="sgCount" style="display:none">0</span></button>
+      </div>
+
+      <div class="action-row no-print" id="actionBar" style="display:none;">
+        <button class="btn-action primary" id="pdfBtn" onclick="downloadPDF()">Download PDF</button>
+        <button class="btn-action" onclick="copyActiveText()">Copy text</button>
+        <button class="btn-action" onclick="window.print()">Print</button>
+        <span class="fit-note" id="fitNote"></span>
+      </div>
+
+      <!-- Resume -->
+      <div id="tab-resume" class="tab-content active">
+        <div class="viewport-wrapper">
+          <div class="resume-wrap" id="resume-wrapper">
+            <div class="resume-page" id="resume-a4" contenteditable="true" spellcheck="false">
+              <div style="text-align:center; padding-top:170px; color:#94a3b8;">
+                <h3 style="font-weight:600; color:#64748b; margin-bottom:6px; font-size:14pt;">Your resume will appear here</h3>
+                <p style="font-size:10pt;">Add a job link or description on the left and select <b>Generate</b>. You can edit the text directly on the page afterwards.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cover letter -->
+      <div id="tab-cover" class="tab-content">
+        <div class="viewport-wrapper">
+          <div id="coverLetterBox" class="doc-container" contenteditable="true" spellcheck="false">Your cover letter will appear here.</div>
+        </div>
+      </div>
+
+      <!-- Cold email -->
+      <div id="tab-email" class="tab-content">
+        <div class="send-bar no-print">
+          <div class="row-2">
+            <div>
+              <label for="recruiterEmail">Recruiter's email</label>
+              <input type="text" id="recruiterEmail" placeholder="name@company.com" inputmode="email" autocomplete="off" />
+            </div>
+            <div>
+              <label for="emailSubject">Subject</label>
+              <input type="text" id="emailSubject" placeholder="Subject line" />
+            </div>
+          </div>
+          <label class="check"><input type="checkbox" id="attachResume" checked /> Attach this resume as a PDF</label>
+          <div class="send-actions">
+            <button class="btn-action primary" id="sendBtn" onclick="sendColdEmail()">Send email</button>
+            <button class="btn-action" onclick="openGmail()">Open in Gmail</button>
+            <button class="btn-action" onclick="openMailApp()">Open in mail app</button>
+          </div>
+          <p class="hint" id="sendHint">Checking email setup.</p>
+        </div>
+        <div class="viewport-wrapper">
+          <div id="coldEmailBox" class="doc-container" contenteditable="true" spellcheck="false">Your cold email will appear here.</div>
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      <div id="tab-suggest" class="tab-content">
+        <div id="suggestBox"><div class="sg-empty">Generate a resume to see keyword gaps and fixes for this job.</div></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    let pdfRoleSlug = "Resume";
+    let activeTabName = "resume";
+    let lastData = null;
+    let emailEnabled = false;
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const EMAIL_RE = /^[^@\s,;]+@[^@\s,;]+\.[^@\s,;]+$/;
+
+    /* ---------- helpers ---------- */
+    let toastTimer;
+    function toast(msg, isError) {
+      const t = $("toast");
+      t.textContent = msg;
+      t.className = "toast show" + (isError ? " error" : "");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove("show"), 4200);
+    }
+
+    function updateJdCount() {
+      const v = $("jdInput").value.trim();
+      const n = v ? v.split(/\s+/).length : 0;
+      $("jdCount").textContent = n + (n === 1 ? " word" : " words");
+    }
+    $("jdInput").addEventListener("input", updateJdCount);
+
+    function isValidLink(u) { return /^https?:\/\/[^\s]+\.[^\s]+/i.test(u); }
+
+    function prefillRecruiterEmail(emails) {
+      if (!emails || !emails.length) return;
+      if (!$("recruiterEmail").value.trim()) $("recruiterEmail").value = emails[0];
+    }
+
+    function findEmails(text) {
+      const found = (text.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g) || [])
+        .filter(e => !/no-?reply|donotreply/i.test(e)).map(e => e.toLowerCase());
+      return [...new Set(found)].slice(0, 3);
+    }
+
+    document.querySelectorAll(".swatch").forEach(s => s.addEventListener("click", () => {
+      document.querySelectorAll(".swatch").forEach(x => x.classList.remove("active"));
+      s.classList.add("active");
+      $("resume-a4").style.setProperty("--cv-accent", s.dataset.color);
+    }));
+
+    function currentAccent() {
+      const a = document.querySelector(".swatch.active");
+      return a ? a.dataset.color : "#000000";
+    }
+
+    function adjustFont(val) {
+      $("fontVal").innerText = (+val).toFixed(1);
+      $("resume-a4").style.fontSize = val + "pt";
+      updateFitNote();
+    }
+
+    function resumeFits() {
+      const page = $("resume-a4");
+      return page.scrollHeight <= page.clientHeight + 1;
+    }
+
+    function updateFitNote() {
+      const note = $("fitNote");
+      if (!lastData) { note.textContent = ""; return; }
+      const size = parseFloat($("resume-a4").style.fontSize) || 8.8;
+      if (resumeFits()) {
+        note.className = "fit-note";
+        note.innerHTML = "<b>Fits on one page</b> at " + size.toFixed(1) + "pt";
+      } else {
+        note.className = "fit-note warn";
+        note.innerHTML = "<b>Too long</b> for one page. Lower the text size or trim a bullet.";
+      }
+    }
+
+    // Largest font size (up to 9.4pt) at which the content still fits on one A4 page
+    function autoFit() {
+      const page = $("resume-a4");
+      let size = 9.4;
+      for (; size >= 7.0; size -= 0.1) {
+        page.style.fontSize = size.toFixed(1) + "pt";
+        if (resumeFits()) break;
+      }
+      size = Math.max(size, 7.0);
+      $("fontSlider").value = size;
+      $("fontVal").innerText = size.toFixed(1);
+    }
+
+    function switchTab(tab) {
+      activeTabName = tab;
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      $("tab-" + tab).classList.add("active");
+      $("actionBar").style.display = (tab === "suggest" || !lastData) ? "none" : "flex";
+      $("pdfBtn").textContent = tab === "resume" ? "Download PDF" : "Download .txt";
+    }
+
+    /* ---------- server status ---------- */
+    function setPill(id, text, state) {
+      const el = $(id);
+      el.textContent = text;
+      el.className = "pill " + state;
+    }
+
+    async function initStatus() {
+      try {
+        const [h, e] = await Promise.all([
+          fetch("/api/health").then(r => r.json()),
+          fetch("/api/email-status").then(r => r.json())
+        ]);
+        if (h.gemini_key_present === true) setPill("pillAI", "AI ready", "ok");
+        else if (h.gemini_key_present === false) setPill("pillAI", "AI key missing", "off");
+        else setPill("pillAI", "Server online", "ok");
+
+        emailEnabled = !!e.enabled;
+        setPill("pillMail", emailEnabled ? "Email ready" : "Email off", emailEnabled ? "ok" : "off");
+        $("sendHint").textContent = emailEnabled
+          ? "Sends from " + e.from + ". Replies go to the same address."
+          : "Direct sending is not set up. Add SMTP_USER and SMTP_APP_PASSWORD to your .env file, or use Open in Gmail.";
+      } catch (err) {
+        emailEnabled = false;
+        setPill("pillAI", "Server offline", "off");
+        setPill("pillMail", "Email off", "off");
+        $("sendHint").textContent = "Could not reach the server. Use Open in Gmail instead.";
+      }
+      $("sendBtn").disabled = !emailEnabled;
+    }
+
+    /* ---------- job link ---------- */
+    async function fetchJD() {
+      const url = $("jobLink").value.trim();
+      if (!isValidLink(url)) { toast("Paste a full link starting with https://", true); $("jobLink").focus(); return; }
+
+      const btn = $("fetchBtn");
+      btn.disabled = true; btn.textContent = "Reading";
+      try {
+        const res = await fetch("/api/fetch-jd", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Could not read that link");
+
+        $("jdInput").value = data.text;
+        updateJdCount();
+        prefillRecruiterEmail(data.emails);
+        toast(data.emails && data.emails.length
+          ? "Job description loaded. Found a contact email: " + data.emails[0]
+          : "Job description loaded.");
+      } catch (e) {
+        toast(e.message, true);
+      } finally {
+        btn.disabled = false; btn.textContent = "Read job";
+      }
+    }
+
+    function updateApplyCard() {
+      const url = $("jobLink").value.trim();
+      const sub = $("applySub");
+      if (isValidLink(url)) {
+        let host = url;
+        try { host = new URL(url).hostname.replace(/^www\./, ""); } catch (e) {}
+        sub.textContent = "Saves your resume, copies your cover letter, then opens " + host + ".";
+      } else {
+        sub.textContent = "Paste the job link on the left to apply from here.";
+      }
+    }
+    $("jobLink").addEventListener("input", updateApplyCard);
+
+    async function applyNow() {
+      const url = $("jobLink").value.trim();
+      if (!lastData) { toast("Generate your resume first", true); return; }
+      if (!isValidLink(url)) { toast("Paste the job link in the box on the left first", true); $("jobLink").focus(); return; }
+
+      const btn = $("applyBtn");
+      btn.disabled = true; btn.textContent = "Preparing";
+      let copied = true;
+      try {
+        // copy first, while this tab still has focus
+        try { await navigator.clipboard.writeText($("coverLetterBox").innerText); } catch (e) { copied = false; }
+        await downloadResumePdf();
+        const w = window.open(url, "_blank", "noopener");
+        if (!w) { toast("Your browser blocked the new tab. Allow pop-ups for this page and try again.", true); return; }
+        toast(copied
+          ? "Resume saved and cover letter copied. Upload and paste them on the application page."
+          : "Resume saved. Copy your cover letter from its tab, then paste it on the application page.");
+      } catch (e) {
+        toast("Could not prepare the application: " + e.message, true);
+      } finally {
+        btn.disabled = false; btn.textContent = "Apply now";
+      }
+    }
+
+    /* ---------- generate ---------- */
+    const LOADING_STEPS = [
+      "Reading the job description",
+      "Matching your experience to it",
+      "Writing the resume",
+      "Drafting the cover letter and email"
+    ];
+
+    async function generateSuite() {
+      const jd_text = $("jdInput").value.trim();
+      const extra_notes = $("extraInput").value.trim();
+      const linkedin_url = $("linkedinSelect").value;
+      const location = $("locationInput").value.trim() || "Bengaluru";
+      const btn = $("generateBtn");
+      const label = $("generateLabel");
+
+      if (!jd_text) { toast("Add a job link or paste the description first", true); $("jdInput").focus(); return; }
+
+      btn.disabled = true;
+      let step = 0;
+      label.textContent = LOADING_STEPS[0];
+      const ticker = setInterval(() => { step = (step + 1) % LOADING_STEPS.length; label.textContent = LOADING_STEPS[step]; }, 2500);
+
+      try {
+        const res = await fetch("/api/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jd_text, extra_notes, linkedin_url, location })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Generation failed");
+
+        lastData = data;
+        const t = data.tailored;
+
+        // show the resume tab first so layout measurements are valid
+        $("tabBar").style.display = "flex";
+        switchTab("resume");
+
+        renderResumeHTML(data.personal_info, data.education, data.achievements, t);
+        $("resume-a4").style.setProperty("--cv-accent", currentAccent());
+
+        $("coverLetterBox").innerText = t.cover_letter;
+        $("coldEmailBox").innerText = t.cold_email;
+        $("emailSubject").value = t.cold_email_subject || ("Application for " + (t.headline.split("|")[0] || "the role").trim());
+        prefillRecruiterEmail(findEmails(jd_text));
+
+        if ($("autoFitBox").checked) autoFit(); else adjustFont($("fontSlider").value);
+        updateFitNote();
+        renderSuggestions(jd_text, data);
+        updateApplyCard();
+        switchTab("resume");
+      } catch (err) {
+        toast("Error: " + err.message, true);
+      } finally {
+        clearInterval(ticker);
+        btn.disabled = false;
+        label.textContent = "Generate resume, cover letter and email";
+      }
+    }
+
+    function renderResumeHTML(p, edu, achievements, t) {
+      pdfRoleSlug = (t.headline.split("|")[0] || "Resume").trim().replace(/[^a-zA-Z0-9]+/g, "_");
+
+      const skillsHTML = (t.skills || []).map(s =>
+        `<div class="cv-skill-line"><strong>${s.category_name}:</strong> ${s.skills_list}</div>`).join("");
+
+      const expHTML = (t.experience || []).map(e => `
+        <div class="cv-block">
+          <div class="cv-row">
+            <span class="cv-left">${e.role} | ${e.company}</span>
+            <span class="cv-right">${e.duration}</span>
+          </div>
+          <ul class="cv-bullets">${e.bullets.map(b => `<li>${b}</li>`).join("")}</ul>
+        </div>`).join("");
+
+      const projHTML = (t.projects || []).map(pr => `
+        <div class="cv-block">
+          <div class="cv-row"><span class="cv-left">${pr.title}</span></div>
+          <ul class="cv-bullets">${pr.bullets.map(b => `<li>${b}</li>`).join("")}</ul>
+        </div>`).join("");
+
+      const certHTML = (t.certifications || []).map(c => `
+        <li><div class="cv-row"><span class="cv-left">${c.title}</span><span class="cv-right">${c.year}</span></div></li>`).join("");
+
+      const achHTML = (achievements || []).map(a =>
+        `<li>${a.text}${a.doi_url ? ` DOI: <a class="cv-link" href="${a.doi_url}">${a.doi_label}</a>.` : ""}</li>`).join("");
+
+      $("resume-a4").innerHTML = `
+        <div class="cv-header">
+          <div class="cv-name">${p.name}</div>
+          <div class="cv-headline">${t.headline}</div>
+          <div class="cv-contact">
+            ${p.phone} &nbsp;|&nbsp; <a href="mailto:${p.email}">${p.email}</a> &nbsp;|&nbsp; ${p.location} &nbsp;|&nbsp; <a href="${p.portfolio_url}">${p.portfolio_label}</a>
+          </div>
+          <div class="cv-contact">
+            <a href="${p.linkedin}">${p.linkedin}</a> &nbsp;|&nbsp; <a href="${p.github}">${p.github}</a>
+          </div>
+        </div>
+        <div class="cv-section"><div class="cv-section-title">Summary</div><div class="cv-summary">${t.summary}</div></div>
+        <div class="cv-section"><div class="cv-section-title">Skills</div>${skillsHTML}</div>
+        <div class="cv-section"><div class="cv-section-title">Experience</div>${expHTML}</div>
+        <div class="cv-section"><div class="cv-section-title">Projects</div>${projHTML}</div>
+        <div class="cv-section">
+          <div class="cv-section-title">Education</div>
+          <div class="cv-row"><span class="cv-left">${edu.degree}</span><span class="cv-right">${edu.date}</span></div>
+          <div style="clear:both;">${edu.institution}</div>
+        </div>
+        <div class="cv-section"><div class="cv-section-title">Certifications</div><ul class="cv-bullets">${certHTML}</ul></div>
+        <div class="cv-section"><div class="cv-section-title">Achievements</div><ul class="cv-bullets">${achHTML}</ul></div>
+      `;
+    }
+
+    /* ---------- suggestions ---------- */
+    const KEYWORDS = [
+      "sql", "python", "power bi", "tableau", "excel", "dax", "power query", "etl", "pandas", "numpy",
+      "data cleaning", "data modeling", "data modelling", "data warehouse", "data visualization", "dashboard", "dashboards",
+      "kpi", "reporting", "statistics", "statistical analysis", "a/b testing", "hypothesis testing", "forecasting",
+      "regression", "machine learning", "looker", "looker studio", "google analytics", "bigquery", "snowflake",
+      "aws", "azure", "gcp", "postgresql", "mysql", "mongodb", "airflow", "spark", "git", "api", "automation",
+      "stakeholder", "storytelling", "business intelligence", "bi", "mis", "root cause analysis", "insights",
+      "data quality", "data validation", "pivot tables", "vlookup", "advanced excel", "jira", "agile", "streamlit", "flask"
+    ];
+
+    function hasWord(text, k) {
+      const e = k.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&");
+      return new RegExp("(^|[^a-z0-9+#])" + e + "($|[^a-z0-9+#])").test(text);
+    }
+
+    function renderSuggestions(jd, data) {
+      const t = data.tailored;
+      const jdl = jd.toLowerCase();
+      const resumeText = $("resume-a4").innerText.toLowerCase();
+
+      const inJD = KEYWORDS.filter(k => hasWord(jdl, k));
+      const covered = inJD.filter(k => hasWord(resumeText, k));
+      const missing = inJD.filter(k => !hasWord(resumeText, k));
+
+      const score = Math.round(+t.ats_match_score || 0);
+      const ring = $("scoreRing");
+      ring.style.setProperty("--p", score);
+      ring.style.setProperty("--ring", score >= 80 ? "var(--good)" : score >= 60 ? "var(--warn)" : "var(--bad)");
+      $("scoreNum").textContent = score;
+      const matched = (t.matched_keywords || []).join(", ");
+      $("scoreMeta").innerHTML = "<b>ATS match</b>" + (matched ? "<br>Matched: " + esc(matched) : "");
+      $("resultTop").style.display = "grid";
+
+      const bullets = [...(t.experience || []).flatMap(e => e.bullets), ...(t.projects || []).flatMap(p => p.bullets)]
+        .map(b => b.replace(/<[^>]+>/g, "").trim());
+      const withNumbers = bullets.filter(b => /\d/.test(b)).length;
+      const longBullets = bullets.filter(b => b.split(/\s+/).length > 28).length;
+      const summaryWords = (t.summary || "").replace(/<[^>]+>/g, "").trim().split(/\s+/).length;
+      const weakStarts = bullets.filter(b => /^(responsible for|worked on|helped|assisted|involved in|duties)/i.test(b)).length;
+      const ratio = bullets.length ? withNumbers / bullets.length : 0;
+
+      const checks = [];
+      const add = (state, title, note) => checks.push({ state, title, note });
+
+      add(resumeFits() ? "pass" : "fail", "One-page layout",
+        resumeFits() ? "Everything fits on a single A4 page." : "Content spills past the page. Shorten bullets or reduce text size.");
+      add(ratio >= 0.6 ? "pass" : ratio >= 0.4 ? "warn" : "fail", "Numbers in bullets",
+        withNumbers + " of " + bullets.length + " bullets contain a metric. Aim for at least 60%.");
+      add(longBullets === 0 ? "pass" : "warn", "Bullet length",
+        longBullets === 0 ? "No bullet runs past 28 words." : longBullets + " bullet(s) exceed 28 words. Split or tighten them.");
+      add(summaryWords >= 30 && summaryWords <= 65 ? "pass" : "warn", "Summary length",
+        summaryWords + " words. Recruiters skim, so 30 to 65 reads best.");
+      add(weakStarts === 0 ? "pass" : "warn", "Strong opening verbs",
+        weakStarts === 0 ? "Bullets start with action verbs." : weakStarts + " bullet(s) start with a weak phrase like 'worked on' or 'helped'.");
+      add(missing.length === 0 ? "pass" : missing.length <= 2 ? "warn" : "fail", "Keyword coverage",
+        inJD.length ? covered.length + " of " + inJD.length + " tracked JD keywords appear in your resume." : "No tracked skill keywords found in this JD.");
+
+      const tips = [];
+      if (Array.isArray(t.suggestions)) t.suggestions.forEach(x => tips.push(String(x)));
+      if (missing.length) tips.push("The JD asks for " + missing.slice(0, 5).join(", ") + ". Add them to Skills or a bullet only if you have used them.");
+      if (ratio < 0.6) tips.push("Add a number to bullets that have none: rows processed, time saved, accuracy, users, or percentage change.");
+      if (!$("extraInput").value.trim()) tips.push("Use the focus box to push one skill to the top, for example 'lead with Power BI dashboards'.");
+      tips.push("Before applying, tailor the first line of the cover letter to the company's product or recent news.");
+
+      const interview = Array.isArray(t.interview_points) ? t.interview_points : [];
+      const learn = Array.isArray(t.skills_to_build) ? t.skills_to_build : [];
+
+      const issues = checks.filter(c => c.state !== "pass").length;
+      const badge = $("sgCount");
+      badge.textContent = issues;
+      badge.style.display = issues ? "inline-block" : "none";
+
+      $("suggestBox").innerHTML = `
+        <div class="sg-grid">
+          <div class="sg-card">
+            <h3>Resume checks</h3>
+            <p class="sub">Quick quality checks on the generated resume.</p>
+            <ul class="checklist">
+              ${checks.map(c => `
+                <li><span class="dot ${c.state}">${c.state === "pass" ? "✓" : c.state === "warn" ? "!" : "×"}</span>
+                <div>${esc(c.title)}<small>${esc(c.note)}</small></div></li>`).join("")}
+            </ul>
+          </div>
+          <div class="sg-card">
+            <h3>Keyword gaps</h3>
+            <p class="sub">Skills named in the JD, split by whether your resume mentions them.</p>
+            <div class="sub" style="margin-bottom:6px;color:var(--text);font-weight:600">In your resume</div>
+            <div class="chips" style="margin-bottom:16px">${covered.length ? covered.map(k => `<span class="chip ok">${esc(k)}</span>`).join("") : '<span class="chip none">none found</span>'}</div>
+            <div class="sub" style="margin-bottom:6px;color:var(--text);font-weight:600">Missing</div>
+            <div class="chips">${missing.length ? missing.map(k => `<span class="chip miss">${esc(k)}</span>`).join("") : '<span class="chip none">no gaps found</span>'}</div>
+          </div>
+          <div class="sg-card sg-wide">
+            <h3>What to do next</h3>
+            <p class="sub">Specific to this job description.</p>
+            <ul class="tips">${tips.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+          </div>
+          ${interview.length ? `
+          <div class="sg-card">
+            <h3>Likely interview topics</h3>
+            <p class="sub">Prepare an answer for each, using your real projects.</p>
+            <ul class="tips">${interview.map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+          </div>` : ""}
+          ${learn.length ? `
+          <div class="sg-card">
+            <h3>Skills worth building</h3>
+            <p class="sub">Asked for in the JD but not in your profile yet.</p>
+            <div class="chips">${learn.map(k => `<span class="chip miss">${esc(k)}</span>`).join("")}</div>
+          </div>` : ""}
+        </div>`;
+    }
+
+    /* ---------- PDF ---------- */
+    const PAGE_PX_W = 794, PAGE_PX_H = 1122, PAGE_MM_W = 210, PAGE_MM_H = 297;
+
+    // Draws the resume from inside html2canvas's own copy of the page. In that copy the resume is
+    // moved to the top-left corner and made visible, so scrolling, centering and hidden tabs
+    // cannot clip it or leave it blank. The on-screen page is never touched.
+    async function renderResumeCanvas() {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+
+      const links = [];
+      const canvas = await html2canvas($("resume-wrapper"), {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        width: PAGE_PX_W, height: PAGE_PX_H,
+        windowWidth: PAGE_PX_W, windowHeight: PAGE_PX_H,
+        scrollX: 0, scrollY: 0,
+        onclone: doc => {
+          const el = doc.getElementById("resume-wrapper");
+          const page = doc.getElementById("resume-a4");
+          page.removeAttribute("contenteditable");
+          el.style.cssText = "width:794px;height:1122px;max-height:1122px;margin:0;box-shadow:none;border-radius:0;overflow:hidden;background:#fff;";
+
+          const holder = doc.createElement("div");
+          holder.style.cssText = "position:absolute;left:0;top:0;width:794px;height:1122px;background:#fff;z-index:2147483647;";
+          holder.appendChild(el);
+          doc.body.appendChild(holder);
+
+          // measure link positions here, where the resume is guaranteed to be laid out
+          const hb = holder.getBoundingClientRect();
+          page.querySelectorAll("a[href]").forEach(a => {
+            const r = a.getBoundingClientRect();
+            links.push({
+              url: a.getAttribute("href"),
+              x: r.left - hb.left, y: r.top - hb.top, w: r.width, h: r.height
+            });
+          });
+        }
+      });
+      return { canvas, links };
+    }
+
+    function isCanvasBlank(canvas) {
+      const s = document.createElement("canvas");
+      s.width = 80; s.height = 113;
+      const c = s.getContext("2d");
+      c.drawImage(canvas, 0, 0, s.width, s.height);
+      const d = c.getImageData(0, 0, s.width, s.height).data;
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i] < 250 || d[i + 1] < 250 || d[i + 2] < 250) return false;
+      }
+      return true;
+    }
+
+    async function buildResumePdf() {
+      const { canvas, links } = await renderResumeCanvas();
+      if (!canvas.width || !canvas.height || isCanvasBlank(canvas)) {
+        throw new Error("The resume rendered blank. Use Print and choose Save as PDF instead.");
+      }
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+      pdf.addImage(canvas.toDataURL("image/jpeg", 0.98), "JPEG", 0, 0, PAGE_MM_W, PAGE_MM_H);
+
+      const kx = PAGE_MM_W / PAGE_PX_W, ky = PAGE_MM_H / PAGE_PX_H;
+      links.forEach(l => {
+        if (l.w > 0 && l.h > 0) pdf.link(l.x * kx, l.y * ky, l.w * kx, l.h * ky, { url: l.url });
+      });
+      return pdf;
+    }
+
+    async function downloadResumePdf() {
+      const pdf = await buildResumePdf();
+      pdf.save(`SYED_MUJATABA_HAMZAVI_${pdfRoleSlug}.pdf`);
+    }
+
+    async function getResumePdfBase64() {
+      const pdf = await buildResumePdf();
+      return pdf.output("datauristring").split("base64,")[1];
+    }
+
+    async function downloadPDF() {
+      if (activeTabName === "resume") {
+        if (!lastData) { toast("Generate a resume first", true); return; }
+        const btn = $("pdfBtn");
+        btn.disabled = true; btn.textContent = "Preparing PDF";
+        try {
+          await downloadResumePdf();
+        } catch (e) {
+          toast("PDF failed: " + e.message, true);
+        } finally {
+          btn.disabled = false; btn.textContent = "Download PDF";
+        }
+      } else {
+        const text = activeTabName === "cover" ? $("coverLetterBox").innerText : $("coldEmailBox").innerText;
+        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `Syed_Mujataba_Hamzavi_${activeTabName === "cover" ? "Cover_Letter" : "Cold_Email"}.txt`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      }
+    }
+
+    function copyActiveText() {
+      let text = "";
+      if (activeTabName === "resume") text = $("resume-a4").innerText;
+      else if (activeTabName === "cover") text = $("coverLetterBox").innerText;
+      else text = $("coldEmailBox").innerText;
+      navigator.clipboard.writeText(text).then(() => toast("Copied to clipboard"), () => toast("Copy failed", true));
+    }
+
+    /* ---------- cold email to recruiter ---------- */
+    function readEmailFields() {
+      const to = $("recruiterEmail").value.trim();
+      const subject = $("emailSubject").value.trim();
+      const body = $("coldEmailBox").innerText.trim();
+      if (!EMAIL_RE.test(to)) { toast("Enter a valid recruiter email", true); $("recruiterEmail").focus(); return null; }
+      if (!subject) { toast("Add a subject line", true); $("emailSubject").focus(); return null; }
+      if (!body) { toast("The email body is empty", true); return null; }
+      return { to, subject, body };
+    }
+
+    async function sendColdEmail() {
+      const f = readEmailFields();
+      if (!f) return;
+
+      const placeholders = f.body.match(/\[[^\]]+\]/g);
+      let question = "Send this email to " + f.to + "?";
+      if (placeholders) question += "\n\nIt still contains placeholder text: " + placeholders.slice(0, 3).join(", ");
+      if (!confirm(question)) return;
+
+      const btn = $("sendBtn");
+      btn.disabled = true; btn.textContent = "Sending";
+      try {
+        let attachment_b64 = null;
+        if ($("attachResume").checked) attachment_b64 = await getResumePdfBase64();
+
+        const res = await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to_email: f.to,
+            subject: f.subject,
+            body: f.body,
+            attachment_b64,
+            attachment_name: `SYED_MUJATABA_HAMZAVI_${pdfRoleSlug}.pdf`
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.detail || "Sending failed");
+        toast("Email sent to " + f.to);
+      } catch (e) {
+        toast(e.message, true);
+      } finally {
+        btn.disabled = !emailEnabled;
+        btn.textContent = "Send email";
+      }
+    }
+
+    function openGmail() {
+      const f = readEmailFields();
+      if (!f) return;
+      const url = "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(f.to) +
+        "&su=" + encodeURIComponent(f.subject) + "&body=" + encodeURIComponent(f.body);
+      window.open(url, "_blank", "noopener");
+      toast("Gmail opened. Attach the resume PDF yourself.");
+    }
+
+    function openMailApp() {
+      const f = readEmailFields();
+      if (!f) return;
+      window.location.href = "mailto:" + encodeURIComponent(f.to) +
+        "?subject=" + encodeURIComponent(f.subject) +
+        "&body=" + encodeURIComponent(f.body.replace(/\n/g, "\r\n"));
+    }
+
+    initStatus();
+  </script>
+</body>
+</html>
