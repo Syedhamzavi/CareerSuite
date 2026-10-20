@@ -1,19 +1,18 @@
+import base64
 import html as html_lib
 import ipaddress
-import socket
-from html.parser import HTMLParser
-from urllib.parse import urljoin, urlparse
-
-import httpx
-import base64
 import json
 import os
 import re
 import smtplib
+import socket
 from email.message import EmailMessage
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urljoin, urlparse
 
+import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import RedirectResponse
@@ -26,7 +25,6 @@ from pydantic import BaseModel, Field
 BASE_DIR = Path(__file__).parent
 for _p in (BASE_DIR / ".env", BASE_DIR.parent / ".env"):
     if _p.exists():
-        # utf-8-sig also handles files saved with a hidden byte-order mark
         load_dotenv(dotenv_path=_p, override=True, encoding="utf-8-sig")
         print(f".env loaded from: {_p}")
         break
@@ -38,17 +36,29 @@ print("GEMINI key present:", bool(os.getenv("GEMINI_API_KEY", "").strip()))
 # ---------- config ----------
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash").strip()
 
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
-SMTP_USER = os.getenv("SMTP_USER", "").strip()
-SMTP_PASSWORD = os.getenv("SMTP_APP_PASSWORD", "").strip()
+SMTP_USER = os.getenv("SMTP_USER", "").strip().strip("'\"")
+# Google shows App Passwords in groups of four with spaces; remove them and any quotes
+SMTP_PASSWORD = re.sub(r"\s+", "", os.getenv("SMTP_APP_PASSWORD", "")).strip("'\"")
 SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Syed Mujataba Hamzavi").strip()
 
 MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024
 EMAIL_RE = re.compile(r"^[^@\s,;]+@[^@\s,;]+\.[^@\s,;]+$")
 
 PROFILE_PATH = BASE_DIR / "master_profile.json"
+LINKS_PATH = BASE_DIR / "links.json"
 PUBLIC_DIR = BASE_DIR.parent / "public"
+
+AUTH_HELP = (
+    "Gmail rejected the login. Use a 16-character App Password "
+    "(Google Account > Security > 2-Step Verification > App passwords) in SMTP_APP_PASSWORD, "
+    "and your full Gmail address in SMTP_USER."
+)
+NET_HELP = (
+    "Could not reach the mail server on ports 465 or 587. A firewall, antivirus or your network "
+    "(college and office Wi-Fi often block email) is in the way. Try a mobile hotspot, or use Open in Gmail."
+)
 
 app = FastAPI(title="Syed AI Resume & Career Suite API")
 
@@ -116,6 +126,119 @@ class SendEmailRequest(BaseModel):
     attachment_name: str = "Resume.pdf"
 
 
+class FetchJDRequest(BaseModel):
+    url: str
+
+
+# ---------- project and certificate links ----------
+def _valid_url(u) -> bool:
+    return isinstance(u, str) and u.strip().lower().startswith(("http://", "https://"))
+
+
+def _tokens(s: str) -> set:
+    return {t for t in re.findall(r"[a-z0-9]+", s.lower()) if len(t) > 2}
+
+
+def _match(title: str, key: str) -> bool:
+    t, k = title.lower().strip(), key.lower().strip()
+    if not t or not k:
+        return False
+    if k in t or t in k:
+        return True
+    a, b = _tokens(t), _tokens(k)
+    common = len(a & b)
+    return bool(a and b) and common >= 2 and common >= 0.6 * min(len(a), len(b))
+
+
+def _title_of(d: dict) -> str:
+    for k in ("title", "name", "project", "project_name", "certification", "course"):
+        if isinstance(d.get(k), str):
+            return d[k]
+    return ""
+
+
+def _urls_of(d: dict) -> list:
+    pairs, used = [], set()
+    for k, v in d.items():
+        if not _valid_url(v):
+            continue
+        key = k.lower()
+        if "github" in key or "repo" in key or "code" in key:
+            label = "GitHub"
+        elif any(x in key for x in ("live", "demo", "dashboard", "tableau", "power", "app", "site", "deploy")):
+            label = "Live"
+        else:
+            label = "Link"
+        if label not in used:
+            used.add(label)
+            pairs.append((label, v.strip()))
+    return pairs
+
+
+def _collect_link_entries(profile_data: dict):
+    """links.json wins; master_profile.json is the fallback. First match wins."""
+    project_entries, cert_entries = [], []
+
+    if LINKS_PATH.exists():
+        try:
+            raw = json.loads(LINKS_PATH.read_text(encoding="utf-8-sig"))
+        except Exception as e:
+            print("links.json is not valid JSON:", e)
+            raw = {}
+        for key, val in (raw.get("projects") or {}).items():
+            if isinstance(val, str):
+                val = {"Link": val}
+            pairs = [(lbl, u.strip()) for lbl, u in (val or {}).items() if _valid_url(u)]
+            if pairs:
+                project_entries.append((key, pairs))
+        for key, val in (raw.get("certifications") or {}).items():
+            if _valid_url(val):
+                cert_entries.append((key, val.strip()))
+
+    for top_key, items in profile_data.items():
+        if not isinstance(items, list):
+            continue
+        name = top_key.lower()
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            title = _title_of(item)
+            if not title:
+                continue
+            if "project" in name:
+                pairs = _urls_of(item)
+                if pairs:
+                    project_entries.append((title, pairs))
+            elif "cert" in name:
+                pairs = _urls_of(item)
+                if pairs:
+                    cert_entries.append((title, pairs[0][1]))
+
+    return project_entries, cert_entries
+
+
+def _attach_links(tailored: dict, profile_data: dict) -> dict:
+    project_entries, cert_entries = _collect_link_entries(profile_data)
+    found = {"projects": 0, "certifications": 0}
+
+    for p in tailored.get("projects", []):
+        for key, pairs in project_entries:
+            if _match(p.get("title", ""), key):
+                p["links"] = [{"label": lbl, "url": u} for lbl, u in pairs]
+                found["projects"] += 1
+                break
+
+    for c in tailored.get("certifications", []):
+        for key, url in cert_entries:
+            if _match(c.get("title", ""), key):
+                c["url"] = url
+                found["certifications"] += 1
+                break
+
+    print(f"links attached: {found['projects']} projects, {found['certifications']} certifications")
+    return found
+
+
 # ---------- routes ----------
 @app.get("/api/health")
 def health_check():
@@ -133,7 +256,6 @@ def email_status():
 
 @app.post("/api/generate")
 def generate_resume(req: GenerateRequest):
-    # Read the key at request time so a fresh .env value is always used
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     if not api_key:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not set. Add it to your .env file.")
@@ -169,6 +291,7 @@ def generate_resume(req: GenerateRequest):
        - suggestions: specific and actionable (what to add, quantify, reorder or learn for THIS JD). No generic advice.
        - skills_to_build: only skills the JD asks for that are genuinely absent from the master profile.
        - interview_points: likely questions for this JD, each tied to one of Syed's real projects or internships.
+    6. Keep each project title exactly as it appears in the master profile so links can be matched to it. Do not output any URLs.
     """
 
     user_prompt = f"""
@@ -201,6 +324,8 @@ def generate_resume(req: GenerateRequest):
     except (TypeError, json.JSONDecodeError):
         raise HTTPException(status_code=502, detail="Gemini returned an invalid response. Try again.")
 
+    links_found = _attach_links(tailored, profile_data)
+
     personal_info = profile_data["personal_info"].copy()
     personal_info["linkedin"] = req.linkedin_url
     personal_info["location"] = req.location
@@ -210,13 +335,11 @@ def generate_resume(req: GenerateRequest):
         "education": profile_data["education"],
         "achievements": profile_data["achievements"],
         "tailored": tailored,
+        "links_found": links_found,
     }
 
+
 # ---------- job link reader ----------
-class FetchJDRequest(BaseModel):
-    url: str
-
-
 class _TextExtractor(HTMLParser):
     SKIP = {"script", "style", "noscript", "svg", "head", "nav", "footer"}
     BLOCK = {"p", "div", "br", "li", "ul", "ol", "h1", "h2", "h3", "h4", "h5", "h6", "tr", "section", "article"}
@@ -329,7 +452,7 @@ def fetch_jd(req: FetchJDRequest):
     except httpx.HTTPError as e:
         raise HTTPException(status_code=502, detail=f"Could not open that link: {e}")
 
-    if resp.status_code in (401, 403, 429, 999) or resp.status_code >= 400:
+    if resp.status_code >= 400:
         raise HTTPException(
             status_code=422,
             detail="This site blocks automatic reading or needs a login. Open the job, copy the description and paste it into the box.",
@@ -350,12 +473,62 @@ def fetch_jd(req: FetchJDRequest):
             emails.append(e.lower())
 
     return {"text": text, "emails": emails[:3], "final_url": current}
+
+
+# ---------- email ----------
+def _close(server):
+    try:
+        server.quit()
+    except Exception:
+        pass
+
+
+def _smtp_open():
+    """Connect and log in. Tries the configured port first, then the other common one."""
+    ports = [SMTP_PORT] + [p for p in (465, 587) if p != SMTP_PORT]
+    last_error = None
+    for port in ports:
+        try:
+            if port == 465:
+                server = smtplib.SMTP_SSL(SMTP_HOST, port, timeout=20)
+            else:
+                server = smtplib.SMTP(SMTP_HOST, port, timeout=20)
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
+            try:
+                server.login(SMTP_USER, SMTP_PASSWORD)
+            except Exception:
+                _close(server)
+                raise
+            return server
+        except smtplib.SMTPAuthenticationError:
+            raise  # wrong credentials: another port will not help
+        except (OSError, smtplib.SMTPException) as e:
+            last_error = e
+    raise ConnectionError(str(last_error) if last_error else "unknown network error")
+
+
+@app.get("/api/email-check")
+def email_check():
+    if not (SMTP_USER and SMTP_PASSWORD):
+        return {"ok": False, "message": "SMTP_USER or SMTP_APP_PASSWORD is missing in api/.env. Add both and restart the server."}
+    try:
+        server = _smtp_open()
+        _close(server)
+        return {"ok": True, "message": f"Connected and logged in as {SMTP_USER}. Sending should work."}
+    except smtplib.SMTPAuthenticationError:
+        return {"ok": False, "message": AUTH_HELP}
+    except OSError as e:
+        return {"ok": False, "message": f"{NET_HELP} (Details: {e})"}
+
+
 @app.post("/api/send-email")
 def send_email(req: SendEmailRequest):
     if not (SMTP_USER and SMTP_PASSWORD):
         raise HTTPException(
             status_code=503,
-            detail="Email sending is not set up. Add SMTP_USER and SMTP_APP_PASSWORD to .env, or use Open in Gmail.",
+            detail="Email sending is not set up. Add SMTP_USER and SMTP_APP_PASSWORD to api/.env, or use Open in Gmail.",
         )
 
     to_email = req.to_email.strip()
@@ -384,12 +557,19 @@ def send_email(req: SendEmailRequest):
         msg.add_attachment(raw, maintype="application", subtype="pdf", filename=name)
 
     try:
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=30) as server:
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.send_message(msg)
+        server = _smtp_open()
     except smtplib.SMTPAuthenticationError:
-        raise HTTPException(status_code=502, detail="SMTP login failed. For Gmail, use an App Password, not your normal password.")
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Could not send email: {str(e)}")
+        raise HTTPException(status_code=502, detail=AUTH_HELP)
+    except OSError as e:
+        raise HTTPException(status_code=502, detail=f"{NET_HELP} (Details: {e})")
+
+    try:
+        server.send_message(msg)
+    except smtplib.SMTPRecipientsRefused:
+        raise HTTPException(status_code=400, detail="The mail server refused the recruiter's address. Check it for typos.")
+    except smtplib.SMTPException as e:
+        raise HTTPException(status_code=502, detail=f"The mail server rejected the message: {e}")
+    finally:
+        _close(server)
 
     return {"status": "sent", "to": to_email}

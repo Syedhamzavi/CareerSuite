@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "adventure works": { "GitHub": "https://github.com/Syedhamzavi/Adventure-Works-Dashboard.git", "Dashboard": "https://public.tableau.com/views/Adventure_Works_17843139607020/AdventureWorksSalesPerformanceOverview?:language=en-US&:sid=&:redirect=auth&:display_count=n&:origin=viz_share_link" },
+    "financial": { "GitHub": "https://github.com/Syedhamzavi/Financial-Dashboard-PowerBi.git", "Dashboard": "https://drive.google.com/file/d/1Pp8rZ1mJZEmuDSCG45PFTQXsDuRLZ8PE/view?usp=sharing" },
+    "finvisor": { "GitHub": "https://github.com/Syedhamzavi/FINVISOR.git", "Live": "https://finvisor-opkd2klvlnmsd6kdxcb8d2.streamlit.app" },
+    "multiple disease": { "GitHub": "https://github.com/Syedhamzavi/Multiple-Disease-Prediction-Using-ML-Model.git", "Live": "https://multiple-disease-prediction-using-ml-model-qevtncaai6ouvtteomv.streamlit.app" },
+    "password manager": { "GitHub": "https://github.com/Syedhamzavi/passwordmanager.git" }
+  },
+  "certifications": {
+    "nasscom": "https://drive.google.com/file/d/17hLjoOs5GV5hupt6EaBfZnZJ0V9dKGDC/view?usp=drive_link",
+    "excelr": "https://drive.google.com/file/d/1vKKKp2BP1Ecdhp_-fRG6p0rzPpvLsoT4/view?usp=drive_link",
+    "forage": "https://drive.google.com/file/d/1r4Qgu4S7w2UuI_73-dC-9sjscHlflloK/view?usp=drive_link",
+    "internshala": "https://drive.google.com/file/d/1vDcNaB4KwsGla86-pHEXvyODSHyqxBJI/view?usp=drive_link",
+    "great learning": "https://drive.google.com/file/d/1ub3dF0ZcRPA1i7RAe0S-RT20a7EEaRI8/view?usp=drive_link"
+  }
+}
