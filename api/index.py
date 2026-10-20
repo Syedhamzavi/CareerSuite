@@ -13,8 +13,9 @@ from typing import Optional
 from urllib.parse import urljoin, urlparse
 
 import httpx
+import io
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from google import genai
@@ -474,6 +475,103 @@ def fetch_jd(req: FetchJDRequest):
 
     return {"text": text, "emails": emails[:3], "final_url": current}
 
+# ---------- JD file upload (PDF, Word, image) ----------
+MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+
+
+def _find_emails(text: str) -> list:
+    out = []
+    for e in re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", text):
+        if not re.search(r"no-?reply|donotreply", e, re.I) and e.lower() not in out:
+            out.append(e.lower())
+    return out[:3]
+
+
+def _gemini_transcribe(data: bytes, mime: str) -> str:
+    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not set, so photos and scanned files cannot be read.")
+    client = genai.Client(api_key=api_key)
+    try:
+        resp = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=[
+                types.Part.from_bytes(data=data, mime_type=mime),
+                "Transcribe all the readable text in this file exactly as written. Return only the text, with no commentary.",
+            ],
+            config=types.GenerateContentConfig(temperature=0),
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Could not read that file: {e}")
+    return (resp.text or "").strip()
+
+
+def _pdf_text(data: bytes) -> str:
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        raise HTTPException(status_code=500, detail="PDF reading is not installed. Run: pip install pypdf")
+    try:
+        reader = PdfReader(io.BytesIO(data))
+        if reader.is_encrypted:
+            reader.decrypt("")
+        return "\n".join((page.extract_text() or "") for page in reader.pages[:15]).strip()
+    except Exception:
+        return ""
+
+
+def _docx_text(data: bytes) -> str:
+    try:
+        import docx
+    except ImportError:
+        raise HTTPException(status_code=500, detail="Word reading is not installed. Run: pip install python-docx")
+    try:
+        document = docx.Document(io.BytesIO(data))
+    except Exception:
+        raise HTTPException(status_code=422, detail="That Word file could not be opened. Save it as .docx and try again.")
+    parts = [p.text for p in document.paragraphs if p.text.strip()]
+    for table in document.tables:
+        for row in table.rows:
+            cells = [c.text.strip() for c in row.cells if c.text.strip()]
+            if cells:
+                parts.append(" | ".join(cells))
+    return "\n".join(parts).strip()
+
+
+@app.post("/api/extract-jd")
+async def extract_jd(request: Request, name: str = ""):
+    length = request.headers.get("content-length")
+    if length and length.isdigit() and int(length) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="That file is larger than 8 MB.")
+    data = await request.body()
+    if not data:
+        raise HTTPException(status_code=400, detail="The file was empty.")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="That file is larger than 8 MB.")
+
+    ext = Path(name.lower()).suffix
+    if data[:5] == b"%PDF-":
+        text = _pdf_text(data)
+        if len(text) < 100:  # scanned PDF: read it with Gemini instead
+            text = _gemini_transcribe(data, "application/pdf")
+    elif data[:2] == b"PK" and ext in (".docx", ".dotx", ""):
+        text = _docx_text(data)
+    elif data[:3] == b"\xff\xd8\xff":
+        text = _gemini_transcribe(data, "image/jpeg")
+    elif data[:8] == b"\x89PNG\r\n\x1a\n":
+        text = _gemini_transcribe(data, "image/png")
+    elif data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        text = _gemini_transcribe(data, "image/webp")
+    elif ext == ".doc":
+        raise HTTPException(status_code=415, detail="Old .doc files are not supported. Save it as .docx or PDF and try again.")
+    else:
+        raise HTTPException(status_code=415, detail="Upload a PDF, Word (.docx), JPG, PNG or WebP file.")
+
+    if len(text) < 80:
+        raise HTTPException(status_code=422, detail="Not enough readable text was found in that file. Try a clearer photo or paste the text.")
+
+    text = text[:12000]
+    return {"text": text, "emails": _find_emails(text)}
 
 # ---------- email ----------
 def _close(server):
